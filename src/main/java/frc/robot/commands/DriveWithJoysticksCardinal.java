@@ -96,7 +96,7 @@ public class DriveWithJoysticksCardinal extends Command {
         var driveRotation = drive.getRotation(); // angle from alliance wall normal
         Optional<Alliance> alliance = DriverStation.getAlliance();
         if (alliance.isPresent() && alliance.get() == Alliance.Red) {
-        driveRotation = driveRotation.rotateBy(new Rotation2d(Math.PI));
+            driveRotation = driveRotation.rotateBy(new Rotation2d(Math.PI));
         }
         speeds = ChassisSpeeds.fromFieldRelativeSpeeds(speeds, driveRotation);
 

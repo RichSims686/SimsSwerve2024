@@ -71,20 +71,20 @@ public class DriveToPose extends Command {
       new LoggedTunableNumber("DriveToPose/FFMinRadius");
 
   static {
-         driveKp.initDefault(2.0);
+        driveKp.initDefault(2.0);
         driveKd.initDefault(0.0);
         thetaKp.initDefault(5.0);
         thetaKd.initDefault(0.0);
         driveMaxVelocity.initDefault(Units.inchesToMeters(150.0));
-        driveMaxVelocitySlow.initDefault(Units.inchesToMeters(50.0));
+        driveMaxVelocitySlow.initDefault(0.5);
         driveMaxAcceleration.initDefault(Units.inchesToMeters(95.0));
         thetaMaxVelocity.initDefault(Units.degreesToRadians(360.0));
-        thetaMaxVelocitySlow.initDefault(Units.degreesToRadians(90.0));
+        thetaMaxVelocitySlow.initDefault(Units.degreesToRadians(30.0));
         thetaMaxAcceleration.initDefault(Units.degreesToRadians(720.0));
         driveTolerance.initDefault(0.01);
-        driveToleranceSlow.initDefault(0.06);
+        driveToleranceSlow.initDefault(0.1);
         thetaTolerance.initDefault(Units.degreesToRadians(1.0));
-        thetaToleranceSlow.initDefault(Units.degreesToRadians(3.0));
+        thetaToleranceSlow.initDefault(Units.degreesToRadians(10.0));
         ffMinRadius.initDefault(0.2);
         ffMaxRadius.initDefault(0.8);
   }
@@ -214,6 +214,7 @@ public class DriveToPose extends Command {
                 currentPose.getTranslation().minus(targetPose.getTranslation()).getAngle())
             .transformBy(GeomUtil.translationToTransform(driveVelocityScalar, 0.0))
             .getTranslation();
+
     drive.driveVelocity(
         ChassisSpeeds.fromFieldRelativeSpeeds(
             driveVelocity.getX(), driveVelocity.getY(), thetaVelocity, currentPose.getRotation()));

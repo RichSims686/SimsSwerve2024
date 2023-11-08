@@ -17,13 +17,25 @@ public class AprilTagCameraIOLimelight implements AprilTagCameraIO {
     private final String cameraName; 
     private final Transform3d robotToCamera;
 
+    public static enum LimelightPipeline {
+        NEURAL_DETECTOR (0),
+        APRILTAG (1);
+
+        public final int value;
+
+        private LimelightPipeline(int pipeline) {
+            this.value = pipeline;
+        }
+    }
+
+
     public AprilTagCameraIOLimelight(String cameraName, Transform3d robotToCamera) {
         // Important: need to configure robotToCamera pose using Limelight webUI
         // Important: need to configure AprilTag field map using Limelight webUI
         // https://docs.limelightvision.io/en/latest/apriltags_in_3d.html#robot-localization-botpose-and-megatag
         this.cameraName = cameraName;
         this.robotToCamera = robotToCamera;
-        LimelightHelpers.setPipelineIndex(cameraName, 1);
+        LimelightHelpers.setPipelineIndex(cameraName, LimelightPipeline.APRILTAG.value);
     }
 
     public void updateInputs(AprilTagCameraIOInputs inputs) {
@@ -52,24 +64,15 @@ public class AprilTagCameraIOLimelight implements AprilTagCameraIO {
             return;
         }
 
-        if (DriverStation.getAlliance().isPresent()) {
-            Alliance alliance = DriverStation.getAlliance().get();
-            if (alliance == Alliance.Blue) {
-                inputs.visionPose = Optional.of(result.getBotPose3d_wpiBlue());
-            } else if (alliance == Alliance.Red) {
-                inputs.visionPose = Optional.of(result.getBotPose3d_wpiRed());
-            }        
-        }
-
+        inputs.visionPose = Optional.ofNullable(getBotPose3d(result));
         double latencySeconds = (result.latency_capture + result.latency_pipeline + result.latency_jsonParse) / 1000.0;
         inputs.timestamp = Timer.getFPGATimestamp() - latencySeconds;
-
 
 
         // populate targets array
         double limelightAmbiguity = 1.0;    // limelight doesn't give ambiguity, so set this as a large number
         for (LimelightTarget_Fiducial target : result.targets_Fiducials) {
-            Pose3d pose = LimelightCoordinateTransform(target.getTargetPose_CameraSpace());
+            Pose3d pose = convertLimelightEDNtoNWU(target.getTargetPose_CameraSpace());
             inputs.cameraToTargets.add(
                 new AprilTagTarget(
                     (int)target.fiducialID, 
@@ -78,18 +81,27 @@ public class AprilTagCameraIOLimelight implements AprilTagCameraIO {
         }
     }
 
-    /** Tranform from Limelight coordinates to Robot coordinates */
-    /*  Limelight               : Robot
-        x (camera right)        : -y (rightwards)
-        y (camera up)           : +z (upwards)
-        z (camera away)         : +x (forwards)
-        rx (rotation about x)   : -pitch
-        ry (rotation about y)   : +yaw
-        rz (rotation about z)   : -roll
-    */
-    private Pose3d LimelightCoordinateTransform(Pose3d llPose) {
-        Rotation3d llRot = llPose.getRotation();
-        return new Pose3d(new Translation3d(+llPose.getZ(), -llPose.getX(), -llPose.getY()),
-                          new Rotation3d(-llRot.getZ(), -llRot.getX(), +llRot.getY()));
+    public Pose3d getBotPose3d(LimelightHelpers.Results result) {
+        Pose3d botPose3d = null;
+
+        if (DriverStation.getAlliance().isPresent()) {
+             Alliance alliance = DriverStation.getAlliance().get();
+            if (alliance == Alliance.Blue) {
+                botPose3d = result.getBotPose3d_wpiBlue();
+            } else {
+                botPose3d = result.getBotPose3d_wpiRed();
+            }
+            botPose3d = convertLimelightEDNtoNWU(botPose3d);
+        }
+        return botPose3d;
+    }
+
+    // convert from EDN to NWU coordinate system
+    public Pose3d convertLimelightEDNtoNWU(Pose3d llPose3d) {
+        Translation3d Tll = llPose3d.getTranslation();
+        Rotation3d Rll = llPose3d.getRotation();
+        return new Pose3d(
+            new Translation3d(Tll.getZ(), -Tll.getX(), Tll.getY()),
+            new Rotation3d(Rll.getZ(), -Rll.getX(), -Rll.getY() + Math.PI));
     }
 }

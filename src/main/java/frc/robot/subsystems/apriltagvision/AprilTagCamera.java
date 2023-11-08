@@ -11,6 +11,7 @@ import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
+import edu.wpi.first.wpilibj.DriverStation;
 import frc.robot.Constants.VisionConstants;
 import frc.robot.FieldConstants;
 import frc.robot.RobotState;
@@ -78,7 +79,8 @@ public class AprilTagCamera {
 
     private Matrix<N3, N1> computeStdDevs(double distance) {
         double xyStdDev = VisionConstants.k1XYStdDev * distance*distance + VisionConstants.k0XYStdDev;
-        double headingStdDev = VisionConstants.k1HeadingStdDev * distance*distance + VisionConstants.k0HeadingStdDev;
+        double k0HeadingStdDev = DriverStation.isEnabled() ? VisionConstants.k0HeadingStdDev : VisionConstants.k0HeadingStdDevDisabled;
+        double headingStdDev = VisionConstants.k1HeadingStdDev * distance*distance + k0HeadingStdDev;
         return VecBuilder.fill(xyStdDev, xyStdDev, headingStdDev);
     }
  

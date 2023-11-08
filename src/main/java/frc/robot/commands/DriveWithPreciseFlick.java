@@ -117,9 +117,9 @@ public class DriveWithPreciseFlick extends Command {
 
 		// field relative controls
 		var driveRotation = drive.getRotation(); // angle from alliance wall normal
-		Optional<Alliance> alliance = DriverStation.getAlliance();
-		if (alliance.isPresent() && alliance.get() == Alliance.Red) {
-		driveRotation = driveRotation.rotateBy(new Rotation2d(Math.PI));
+        Optional<Alliance> alliance = DriverStation.getAlliance();
+        if (alliance.isPresent() && alliance.get() == Alliance.Red) {
+            driveRotation = driveRotation.rotateBy(new Rotation2d(Math.PI));
 		}
 		speeds = ChassisSpeeds.fromFieldRelativeSpeeds(speeds, driveRotation);    
 
